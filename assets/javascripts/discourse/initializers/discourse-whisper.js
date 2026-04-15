@@ -31,13 +31,12 @@ export default {
         });
       });
 
-      api.serializeOnCreate("whisper_target_user_id", "whisperTargetUserId");
+      api.serializeOnCreate("whisper_target_user_ids", "whisperTargetUserIds");
 
       api.includePostAttributes(
         "is_whisper_to_user",
-        "whisper_target_user_id",
-        "whisper_target_username",
-        "whisper_target_avatar_template"
+        "whisper_target_user_ids",
+        "whisper_targets"
       );
 
       api.decorateCookedElement(
@@ -57,6 +56,13 @@ export default {
 
           const parent = cookedEl.parentElement;
           if (!parent || parent.querySelector(":scope > .whisper-target-banner")) {
+            return;
+          }
+
+          const targets = Array.isArray(post.whisper_targets)
+            ? post.whisper_targets
+            : [];
+          if (!targets.length) {
             return;
           }
 
@@ -84,11 +90,19 @@ export default {
           label.textContent = " whisper to ";
           banner.appendChild(label);
 
-          const link = document.createElement("a");
-          link.className = "whisper-target-user";
-          link.href = `/u/${post.whisper_target_username}`;
-          link.textContent = `@${post.whisper_target_username}`;
-          banner.appendChild(link);
+          targets.forEach((t, i) => {
+            if (i > 0) {
+              const sep = document.createElement("span");
+              sep.className = "whisper-target-sep";
+              sep.textContent = ", ";
+              banner.appendChild(sep);
+            }
+            const link = document.createElement("a");
+            link.className = "whisper-target-user";
+            link.href = `/u/${t.username}`;
+            link.textContent = `@${t.username}`;
+            banner.appendChild(link);
+          });
 
           parent.insertBefore(banner, cookedEl);
         },
@@ -110,25 +124,36 @@ export default {
           return;
         }
 
-        let targetId = null;
-        let targetUsername = null;
-        let targetAvatar = null;
+        // Build the reply audience: the original author plus every target,
+        // minus the current user themself.
+        const byId = new Map();
+        const add = (id, username, avatarTemplate) => {
+          if (!id || id === currentUser.id) {
+            return;
+          }
+          if (!byId.has(id)) {
+            byId.set(id, { id, username, avatar_template: avatarTemplate });
+          }
+        };
+        add(post.user_id, post.username, post.avatar_template);
+        (post.whisper_targets || []).forEach((t) => {
+          add(t.id, t.username, t.avatar_template);
+        });
 
-        if (post.user_id === currentUser.id) {
-          targetId = post.whisper_target_user_id;
-          targetUsername = post.whisper_target_username;
-          targetAvatar = post.whisper_target_avatar_template;
-        } else if (post.whisper_target_user_id === currentUser.id) {
-          targetId = post.user_id;
-          targetUsername = post.username;
-          targetAvatar = post.avatar_template;
+        const replyAudience = [...byId.values()];
+        if (!replyAudience.length) {
+          return;
         }
 
-        if (targetId) {
-          model.set("whisperTargetUserId", targetId);
-          model.set("whisperTargetUsername", targetUsername);
-          model.set("whisperTargetAvatarTemplate", targetAvatar);
-        }
+        model.set(
+          "whisperTargetUserIds",
+          replyAudience.map((u) => u.id)
+        );
+        model.set(
+          "whisperTargetUsernames",
+          replyAudience.map((u) => u.username)
+        );
+        model.set("whisperTargets", replyAudience);
       });
     });
   },

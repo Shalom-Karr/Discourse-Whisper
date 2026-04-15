@@ -5,6 +5,7 @@ require "rails_helper"
 RSpec.describe DiscourseWhisper::GuardianExtensions do
   fab!(:author) { Fabricate(:user) }
   fab!(:target) { Fabricate(:user) }
+  fab!(:second_target) { Fabricate(:user) }
   fab!(:stranger) { Fabricate(:user) }
   fab!(:admin)
   fab!(:moderator)
@@ -12,7 +13,13 @@ RSpec.describe DiscourseWhisper::GuardianExtensions do
   fab!(:topic) { Fabricate(:topic, category: category) }
   fab!(:whisper_post) do
     post = Fabricate(:post, topic: topic, user: author)
-    post.custom_fields["whisper_target_user_id"] = target.id
+    post.custom_fields["whisper_target_user_ids"] = [target.id]
+    post.save_custom_fields
+    post
+  end
+  fab!(:multi_whisper_post) do
+    post = Fabricate(:post, topic: topic, user: author)
+    post.custom_fields["whisper_target_user_ids"] = [target.id, second_target.id]
     post.save_custom_fields
     post
   end
@@ -31,7 +38,7 @@ RSpec.describe DiscourseWhisper::GuardianExtensions do
       end
     end
 
-    context "when the post is a whisper" do
+    context "when the post is a single-target whisper" do
       it "allows the author" do
         expect(Guardian.new(author).can_see_post?(whisper_post)).to eq(true)
       end
@@ -57,13 +64,31 @@ RSpec.describe DiscourseWhisper::GuardianExtensions do
       end
     end
 
+    context "when the post is a multi-target whisper" do
+      it "allows the first target" do
+        expect(Guardian.new(target).can_see_post?(multi_whisper_post)).to eq(true)
+      end
+
+      it "allows the second target" do
+        expect(Guardian.new(second_target).can_see_post?(multi_whisper_post)).to eq(true)
+      end
+
+      it "allows the author" do
+        expect(Guardian.new(author).can_see_post?(multi_whisper_post)).to eq(true)
+      end
+
+      it "hides the post from anyone not in the target list" do
+        expect(Guardian.new(stranger).can_see_post?(multi_whisper_post)).to eq(false)
+      end
+    end
+
     context "with a category group moderator" do
       fab!(:cat_mod_group) { Fabricate(:group) }
       fab!(:cat_mod_user) { Fabricate(:user) }
 
       before do
         cat_mod_group.add(cat_mod_user)
-        category.update!(reviewable_by_group_id: cat_mod_group.id)
+        ::CategoryModerationGroup.create!(category_id: category.id, group_id: cat_mod_group.id)
       end
 
       it "allows a category group moderator to see the whisper" do
@@ -72,8 +97,7 @@ RSpec.describe DiscourseWhisper::GuardianExtensions do
     end
 
     context "when the post is NOT a whisper" do
-      it "falls through to default Guardian behaviour for strangers" do
-        # Baseline: a stranger can see a normal post in a normal category
+      it "lets a stranger see a normal post" do
         expect(Guardian.new(stranger).can_see_post?(normal_post)).to eq(true)
       end
     end
@@ -81,7 +105,14 @@ RSpec.describe DiscourseWhisper::GuardianExtensions do
     context "with a malformed or zero whisper target id" do
       it "falls through to default Guardian behaviour" do
         bad_post = Fabricate(:post, topic: topic, user: author)
-        bad_post.custom_fields["whisper_target_user_id"] = 0
+        bad_post.custom_fields["whisper_target_user_ids"] = [0]
+        bad_post.save_custom_fields
+        expect(Guardian.new(stranger).can_see_post?(bad_post)).to eq(true)
+      end
+
+      it "falls through when the array is empty" do
+        bad_post = Fabricate(:post, topic: topic, user: author)
+        bad_post.custom_fields["whisper_target_user_ids"] = []
         bad_post.save_custom_fields
         expect(Guardian.new(stranger).can_see_post?(bad_post)).to eq(true)
       end

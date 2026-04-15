@@ -6,23 +6,24 @@ module DiscourseWhisper
       return super unless SiteSetting.discourse_whisper_enabled
       return super unless post.is_a?(::Post)
 
-      raw_target = post.custom_fields["whisper_target_user_id"]
-      return super if raw_target.blank?
+      raw_targets = post.custom_fields["whisper_target_user_ids"]
+      return super if raw_targets.blank?
 
-      target_id = raw_target.to_i
-      return super if target_id <= 0
+      target_ids = Array(raw_targets).map(&:to_i).reject { |id| id <= 0 }
+      return super if target_ids.empty?
+
+      # Anonymous / unauthenticated viewers never see whispers
+      return false unless authenticated?
 
       # Author always sees their own whisper
-      return super if @user && post.user_id == @user.id
-      # Target user sees it
-      return super if @user && @user.id == target_id
-      # Staff always see it (for moderation)
-      return super if @user&.staff?
+      return super if post.user_id == @user.id
+      # Any target recipient sees it
+      return super if target_ids.include?(@user.id)
+      # Site staff see it for oversight
+      return super if @user.staff?
       # Category group moderators see it for oversight
       category = post.topic&.category
-      if category && @user && is_category_group_moderator?(category)
-        return super
-      end
+      return super if category && is_category_group_moderator?(category)
 
       false
     end

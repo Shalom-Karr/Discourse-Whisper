@@ -121,24 +121,22 @@ The specs live in [`spec/lib/`](../spec/lib/) and cover:
 The visibility rule for `Guardian#can_see_post?` on whisper posts. Cases:
 
 - Plugin disabled → falls through to default Guardian behaviour
-- Whisper post, viewer is the **author** → ✅ visible
-- Whisper post, viewer is the **target user** → ✅ visible
-- Whisper post, viewer is an **admin** → ✅ visible (oversight)
-- Whisper post, viewer is a **moderator** → ✅ visible (oversight)
-- Whisper post, viewer is a **category group moderator** → ✅ visible (oversight)
-- Whisper post, viewer is an **unrelated user** → ❌ hidden
-- Whisper post, viewer is **anonymous** → ❌ hidden
+- **Single-target whisper:** author / target / admin / moderator → ✅ visible; stranger / anonymous → ❌ hidden
+- **Multi-target whisper:** author / first target / second target → ✅ visible; stranger → ❌ hidden
+- Category group moderator → ✅ visible (oversight)
 - Non-whisper post → falls through to defaults
-- Malformed / zero target id → falls through to defaults (graceful degradation)
+- Malformed / zero / empty target list → falls through to defaults (graceful degradation)
 
 ### `post_custom_fields_spec.rb`
 
-The `on(:post_created)` event handler that writes the `whisper_target_user_id` custom field. Cases:
+The `on(:post_created)` event handler that writes the `whisper_target_user_ids` custom field. Cases:
 
-- Valid target id → custom field is saved
-- Nonexistent target id → custom field is **not** saved (ignored)
-- Zero / negative target id → ignored
-- Plugin disabled → ignored even when a valid id is passed
+- Single valid target id → custom field is saved
+- Multiple valid target ids → all are saved
+- Mix of valid and bogus ids → bogus are filtered out, valid ones are saved
+- All ids bogus → custom field is **not** saved
+- Zero / negative ids → ignored
+- Plugin disabled → ignored even when valid ids are passed
 
 ## Reading the results
 

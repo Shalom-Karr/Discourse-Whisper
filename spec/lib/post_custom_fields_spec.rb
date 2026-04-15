@@ -5,56 +5,70 @@ require "rails_helper"
 RSpec.describe "discourse-whisper post custom fields" do
   fab!(:author) { Fabricate(:user, trust_level: TrustLevel[2]) }
   fab!(:target) { Fabricate(:user) }
+  fab!(:second_target) { Fabricate(:user) }
   fab!(:topic) { Fabricate(:topic, user: author) }
 
   before { SiteSetting.discourse_whisper_enabled = true }
 
-  it "stores whisper_target_user_id on post create when provided" do
-    creator =
-      PostCreator.new(
-        author,
-        topic_id: topic.id,
-        raw: "This is a whisper to the target user, with enough content to validate.",
-        whisper_target_user_id: target.id,
-      )
-    post = creator.create!
-    expect(post.custom_fields["whisper_target_user_id"].to_i).to eq(target.id)
+  def create_post!(raw:, ids:)
+    PostCreator.new(
+      author,
+      topic_id: topic.id,
+      raw: raw,
+      whisper_target_user_ids: ids,
+    ).create!
   end
 
-  it "ignores a whisper_target_user_id that does not resolve to a real user" do
-    creator =
-      PostCreator.new(
-        author,
-        topic_id: topic.id,
-        raw: "This should not become a whisper because the target id is bogus.",
-        whisper_target_user_id: 9_999_999,
+  it "stores a single whisper_target_user_ids on post create" do
+    post = create_post!(raw: "Whispering to one user, with enough content.", ids: [target.id])
+    expect(Array(post.custom_fields["whisper_target_user_ids"]).map(&:to_i)).to eq([target.id])
+  end
+
+  it "stores multiple whisper target ids on post create" do
+    post =
+      create_post!(
+        raw: "Whispering to a couple of users, with enough content to pass.",
+        ids: [target.id, second_target.id],
       )
-    post = creator.create!
-    expect(post.custom_fields["whisper_target_user_id"]).to be_blank
+    stored = Array(post.custom_fields["whisper_target_user_ids"]).map(&:to_i)
+    expect(stored).to contain_exactly(target.id, second_target.id)
+  end
+
+  it "filters out ids that do not resolve to real users" do
+    post =
+      create_post!(
+        raw: "One good id and one bogus id in the same whisper request.",
+        ids: [target.id, 9_999_999],
+      )
+    stored = Array(post.custom_fields["whisper_target_user_ids"]).map(&:to_i)
+    expect(stored).to eq([target.id])
+  end
+
+  it "does not set the custom field when all ids are bogus" do
+    post =
+      create_post!(
+        raw: "Every id is bogus so this should not be a whisper at all.",
+        ids: [9_999_999, 9_999_998],
+      )
+    expect(post.custom_fields["whisper_target_user_ids"]).to be_blank
   end
 
   it "does not set the custom field when the plugin is disabled" do
     SiteSetting.discourse_whisper_enabled = false
-    creator =
-      PostCreator.new(
-        author,
-        topic_id: topic.id,
-        raw: "Plugin disabled path: target id should be ignored entirely.",
-        whisper_target_user_id: target.id,
+    post =
+      create_post!(
+        raw: "Plugin disabled path: ids should be ignored entirely here.",
+        ids: [target.id],
       )
-    post = creator.create!
-    expect(post.custom_fields["whisper_target_user_id"]).to be_blank
+    expect(post.custom_fields["whisper_target_user_ids"]).to be_blank
   end
 
-  it "ignores a non-positive whisper_target_user_id" do
-    creator =
-      PostCreator.new(
-        author,
-        topic_id: topic.id,
-        raw: "Zero target id should be a no-op for the whisper plugin.",
-        whisper_target_user_id: 0,
+  it "ignores non-positive ids" do
+    post =
+      create_post!(
+        raw: "Zero and negative ids should be dropped with the rest.",
+        ids: [0, -1],
       )
-    post = creator.create!
-    expect(post.custom_fields["whisper_target_user_id"]).to be_blank
+    expect(post.custom_fields["whisper_target_user_ids"]).to be_blank
   end
 end

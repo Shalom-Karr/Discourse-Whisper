@@ -10,14 +10,16 @@ import { popupAjaxError } from "discourse/lib/ajax-error";
 import i18n from "discourse-common/helpers/i18n";
 
 export default class WhisperTargetModal extends Component {
-  @tracked selection = this.args.model?.composer?.whisperTargetUsername
-    ? [this.args.model.composer.whisperTargetUsername]
+  @tracked selection = Array.isArray(
+    this.args.model?.composer?.whisperTargetUsernames
+  )
+    ? [...this.args.model.composer.whisperTargetUsernames]
     : [];
   @tracked saving = false;
 
   @action
   updateSelection(names) {
-    this.selection = names.slice(-1);
+    this.selection = names;
   }
 
   @action
@@ -28,24 +30,38 @@ export default class WhisperTargetModal extends Component {
       return;
     }
 
-    const username = this.selection[0];
-    if (!username) {
-      composer.set("whisperTargetUserId", null);
-      composer.set("whisperTargetUsername", null);
-      composer.set("whisperTargetAvatarTemplate", null);
+    if (!this.selection.length) {
+      composer.set("whisperTargetUserIds", null);
+      composer.set("whisperTargetUsernames", null);
+      composer.set("whisperTargets", null);
       this.args.closeModal();
       return;
     }
 
     this.saving = true;
     try {
-      const data = await ajax(`/u/${encodeURIComponent(username)}.json`);
-      const u = data?.user;
-      if (u) {
-        composer.set("whisperTargetUserId", u.id);
-        composer.set("whisperTargetUsername", u.username);
-        composer.set("whisperTargetAvatarTemplate", u.avatar_template);
-      }
+      const lookups = await Promise.all(
+        this.selection.map((username) =>
+          ajax(`/u/${encodeURIComponent(username)}.json`).then((data) => data?.user).catch(() => null)
+        )
+      );
+      const users = lookups.filter(Boolean);
+      composer.set(
+        "whisperTargetUserIds",
+        users.map((u) => u.id)
+      );
+      composer.set(
+        "whisperTargetUsernames",
+        users.map((u) => u.username)
+      );
+      composer.set(
+        "whisperTargets",
+        users.map((u) => ({
+          id: u.id,
+          username: u.username,
+          avatar_template: u.avatar_template,
+        }))
+      );
       this.args.closeModal();
     } catch (e) {
       popupAjaxError(e);
@@ -58,9 +74,9 @@ export default class WhisperTargetModal extends Component {
   clear() {
     const composer = this.args.model?.composer;
     if (composer) {
-      composer.set("whisperTargetUserId", null);
-      composer.set("whisperTargetUsername", null);
-      composer.set("whisperTargetAvatarTemplate", null);
+      composer.set("whisperTargetUserIds", null);
+      composer.set("whisperTargetUsernames", null);
+      composer.set("whisperTargets", null);
     }
     this.args.closeModal();
   }
@@ -79,7 +95,7 @@ export default class WhisperTargetModal extends Component {
           @value={{this.selection}}
           @onChange={{this.updateSelection}}
           @options={{hash
-            maximum=1
+            maximum=10
             includeGroups=false
             filterPlaceholder="discourse_whisper.composer.search_placeholder"
           }}
