@@ -12,6 +12,14 @@ Once one or more targets are picked:
 
 If the author reopens the modal, the current selection is preselected and a **Clear** button reverts the composer to a normal post.
 
+### Mention-integrated shortcut
+
+The toolbar modal is the canonical way to arm a whisper, but the plugin also watches the composer body for `@mentions` as the author types. When one or more mentions appear that are *not* already in the whisper audience, a small pill button slides in below the composer that reads **"Whisper to @user, @user2"** (or **"Also whisper to @user3"** if a whisper is already armed). Clicking it resolves those usernames to ids and adds them to `whisperTargetUserIds` — same server path as the modal, no extra backend code.
+
+This is the "tag someone and you're offered a whisper" flow. It's sleek (invisible until mentions exist) and obvious (appears right under the composer where the author is looking). The author can still ignore the hint and post publicly, or use the toolbar eye button for the full picker UI.
+
+The connector lives at [`assets/javascripts/discourse/connectors/composer-fields/whisper-mention-hint.gjs`](../assets/javascripts/discourse/connectors/composer-fields/whisper-mention-hint.gjs). It tracks `composer.reply` reactively, so the hint appears and updates as the user types.
+
 ## How the post is saved
 
 The server side is deliberately minimal:

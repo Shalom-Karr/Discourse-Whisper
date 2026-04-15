@@ -8,8 +8,8 @@ Architecturally inspired by [discourse-mini-mod](https://github.com/alltechdev/d
 
 ## How it works
 
-1. **Author clicks the 👁 eye button** in the composer toolbar
-2. A tiny modal opens and they pick **one or more users** as whisper targets (up to 10 per post)
+1. **Author clicks the 👁 eye button** in the composer toolbar — or just types `@username` in the post body and clicks the **"Whisper to @username"** hint that appears below the composer
+2. A tiny modal opens (when using the toolbar button) and they pick **one or more users** as whisper targets (up to 10 per post)
 3. They write and post as normal — the composer picks up a pale indigo tint so they can't forget it's a whisper
 4. The post is saved with a `whisper_target_user_ids` JSON custom field
 5. When the topic is rendered, `Guardian#can_see_post?` returns `false` for anyone who isn't:

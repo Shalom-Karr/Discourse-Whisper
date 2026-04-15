@@ -56,3 +56,35 @@ article.topic-post.whisper-to-user .cooked {
     margin-bottom: 12px;
   }
 }
+
+.whisper-mention-hint {
+  margin: 6px 0 0;
+  animation: whisper-hint-fade-in 120ms ease-out;
+
+  &__btn.btn {
+    background: rgba(99, 102, 241, 0.08);
+    border: 1px solid rgba(99, 102, 241, 0.25);
+    color: var(--tertiary);
+    font-size: var(--font-down-1);
+
+    &:hover:not([disabled]) {
+      background: rgba(99, 102, 241, 0.18);
+      border-color: rgba(99, 102, 241, 0.5);
+    }
+
+    .d-icon {
+      color: var(--tertiary);
+    }
+  }
+}
+
+@keyframes whisper-hint-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
