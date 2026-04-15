@@ -87,8 +87,10 @@ RSpec.describe DiscourseWhisper::GuardianExtensions do
       fab!(:cat_mod_user) { Fabricate(:user) }
 
       before do
+        SiteSetting.enable_category_group_moderation = true
         cat_mod_group.add(cat_mod_user)
         ::CategoryModerationGroup.create!(category_id: category.id, group_id: cat_mod_group.id)
+        category.reload
       end
 
       it "allows a category group moderator to see the whisper" do
