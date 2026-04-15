@@ -1,0 +1,4 @@
+{
+  "name": "discourse-whisper",
+  "about": "Per-user private whisper posts — visible only to the target user, category moderators, and staff."
+}

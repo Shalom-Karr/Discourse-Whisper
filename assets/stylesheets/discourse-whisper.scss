@@ -1,0 +1,58 @@
+.d-editor-button-bar button[data-id="discourse-whisper-target"] {
+  &.whisper-armed,
+  &[aria-pressed="true"] {
+    color: var(--tertiary);
+  }
+}
+
+.d-editor-container.whisper-armed,
+.composer-fields:has(.whisper-composer-target-pill) {
+  background-color: rgba(99, 102, 241, 0.08);
+  border-color: rgba(99, 102, 241, 0.35);
+}
+
+.whisper-target-banner {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--font-down-1);
+  color: var(--tertiary);
+  background: rgba(99, 102, 241, 0.08);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  border-radius: 999px;
+  padding: 2px 10px;
+  margin: 0 0 8px;
+  width: fit-content;
+
+  .whisper-eye {
+    flex-shrink: 0;
+  }
+
+  .whisper-target-label {
+    opacity: 0.85;
+  }
+
+  .whisper-target-user {
+    font-weight: 600;
+    color: var(--tertiary);
+    text-decoration: none;
+  }
+}
+
+article.topic-post.whisper-to-user .cooked {
+  background: rgba(99, 102, 241, 0.04);
+  border-left: 3px solid rgba(99, 102, 241, 0.5);
+  padding-left: 12px;
+}
+
+.whisper-target-modal {
+  .select-kit {
+    width: 100%;
+  }
+
+  &__instructions {
+    color: var(--primary-medium);
+    font-size: var(--font-down-1);
+    margin-bottom: 12px;
+  }
+}

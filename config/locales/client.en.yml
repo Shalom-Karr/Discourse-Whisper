@@ -1,0 +1,18 @@
+en:
+  js:
+    discourse_whisper:
+      toolbar:
+        title: "Send as a whisper to a specific user"
+      composer:
+        modal_title: "Whisper to…"
+        modal_instructions: "Only this user, category moderators, and staff will be able to see this post."
+        search_placeholder: "Search for a user"
+        confirm: "Set whisper target"
+        clear_target: "Clear whisper target"
+      post:
+        whisper_to: "whisper to"
+  admin_js:
+    admin:
+      site_settings:
+        categories:
+          discourse_whisper: "Discourse Whisper"

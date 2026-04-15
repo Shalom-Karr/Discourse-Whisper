@@ -1,0 +1,4 @@
+plugins:
+  discourse_whisper_enabled:
+    default: true
+    client: true

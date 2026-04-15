@@ -1,0 +1,3 @@
+en:
+  site_settings:
+    discourse_whisper_enabled: "Enable discourse-whisper. Authors can mark a post as a whisper aimed at a single user; only that user, category moderators, and staff can see it."
