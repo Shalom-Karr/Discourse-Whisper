@@ -31,43 +31,34 @@ The server side is deliberately minimal:
 
 ## The visibility rule
 
-All access enforcement lives in a single `Guardian#can_see_post?` override in `lib/discourse_whisper/guardian_extensions.rb`:
+Per-post access lives in a single `Guardian#can_see_post?` override in `lib/discourse_whisper/guardian_extensions.rb`. Bulk-load paths (topic stream, search, user-activity queries) are filtered at the SQL level by `DiscourseWhisper::QueryFilter` — see [`architecture.md`](architecture.md) for the three-hook layout.
 
-```ruby
-def can_see_post?(post)
-  return super unless SiteSetting.discourse_whisper_enabled
-  return super unless post.is_a?(::Post)
+The Guardian rule in plain terms:
 
-  raw_targets = post.custom_fields["whisper_target_user_ids"]
-  return super if raw_targets.blank?
-
-  target_ids = Array(raw_targets).map(&:to_i).reject { |id| id <= 0 }
-  return super if target_ids.empty?
-
-  return false unless authenticated?                         # anon: no
-  return super if post.user_id == @user.id                   # author
-  return super if target_ids.include?(@user.id)              # target
-  return super if @user.staff?                               # site staff
-  category = post.topic&.category
-  return super if category && is_category_group_moderator?(category)
-
-  false                                                      # everyone else
-end
-```
+1. If the plugin is disabled, fall through to core.
+2. If the post has no `whisper_target_user_ids` custom field, fall through to core.
+3. Anonymous viewers: always hidden.
+4. Author of the post: always visible.
+5. Viewer is in the target list: always visible.
+6. Viewer is site staff (admin or moderator): always visible (oversight).
+7. Viewer is a category group moderator on the post's category: visible, **unless** the whisper is staff-to-staff (author AND every target is site staff). Staff-only conversations are excluded from cat-mod oversight.
+8. Everyone else: hidden.
 
 `false` at the Guardian layer means Discourse drops the post from the topic stream entirely — non-recipients don't see a placeholder, a stub, or a gap-explanation. The post's `cooked` content is never included in the serialized response they receive.
 
 ## The visibility matrix
 
-| Viewer | Sees the whisper? | Why |
+| Viewer | Mixed-audience whisper | Staff-to-staff whisper |
 |---|---|---|
-| Author | ✅ | `post.user_id == current_user.id` |
-| Any target recipient | ✅ | `whisper_target_user_ids.include?(current_user.id)` |
-| Admin | ✅ | `current_user.staff?` (oversight) |
-| Moderator | ✅ | `current_user.staff?` (oversight) |
-| Category group moderator on that category | ✅ | `Guardian#is_category_group_moderator?` (oversight) |
-| Regular user not in the target list | ❌ | falls through to `false` — post never reaches their serializer |
-| Anonymous viewer | ❌ | `authenticated?` is false — short-circuits before any user check |
+| Author | ✅ | ✅ |
+| Any target recipient | ✅ | ✅ |
+| Admin | ✅ (oversight) | ✅ (oversight) |
+| Moderator | ✅ (oversight) | ✅ (oversight) |
+| Category group moderator on that category | ✅ (oversight) | ❌ (no staff-on-staff oversight) |
+| Regular user not in the target list | ❌ | ❌ |
+| Anonymous viewer | ❌ | ❌ |
+
+"Staff-to-staff" = the author is admin-or-moderator **and** every entry in `whisper_target_user_ids` resolves to an admin-or-moderator user.
 
 ## Rendering on the recipient side
 
