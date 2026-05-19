@@ -134,7 +134,10 @@ RSpec.describe "Whisper visibility", type: :system do
 
       expect(page).to have_css(".whisper-target-banner", wait: 10)
       within("article[data-post-number='#{wp.post_number}']") do
-        find(".post-controls .reply", match: :first).click
+        find(
+          ".post-controls .post-action-menu__reply, .post-controls .reply",
+          match: :first,
+        ).click
       end
 
       expect(page).to have_css(".d-editor-input", wait: 10)
@@ -149,7 +152,7 @@ RSpec.describe "Whisper visibility", type: :system do
       sign_in(recipient)
 
       visit("/search?q=pumpkinseed")
-      expect(page).to have_css(".search-container", wait: 10)
+      expect(page).to have_css(".search-query", wait: 10)
       expect(page).to have_css(
         ".fps-result",
         text: "pumpkinseed",
@@ -163,7 +166,7 @@ RSpec.describe "Whisper visibility", type: :system do
       sign_in(stranger)
 
       visit("/search?q=pumpkinseed")
-      expect(page).to have_css(".search-container", wait: 10)
+      expect(page).to have_css(".search-query", wait: 10)
       expect(page).to have_no_css(".fps-result", text: "pumpkinseed", wait: 5)
       shot("16_search_stranger_no_hit")
     end
@@ -206,9 +209,9 @@ RSpec.describe "Whisper visibility", type: :system do
   context "the admin site setting" do
     it "exposes the master switch under the Discourse Whisper category" do
       sign_in(admin)
-      visit("/admin/site_settings/category/all_results?filter=discourse_whisper_enabled")
+      visit("/admin/site_settings/category/discourse_whisper")
       expect(page).to have_css(
-        ".setting[data-setting='discourse_whisper_enabled']",
+        ".admin-detail .setting[data-setting='discourse_whisper_enabled'], .setting[data-setting='discourse_whisper_enabled']",
         wait: 10,
       )
       shot("19_admin_site_setting")
