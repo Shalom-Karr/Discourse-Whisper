@@ -35,11 +35,23 @@ export default {
 
       api.serializeOnCreate("whisper_target_user_ids", "whisperTargetUserIds");
 
-      api.includePostAttributes(
-        "is_whisper_to_user",
-        "whisper_target_user_ids",
-        "whisper_targets"
-      );
+      // `addTrackedPostProperties` is the modern replacement for the
+      // deprecated `includePostAttributes` — it surfaces the serializer
+      // attributes on the post model, which the cooked-element decorator
+      // below relies on to know a post is a whisper.
+      if (api.addTrackedPostProperties) {
+        api.addTrackedPostProperties(
+          "is_whisper_to_user",
+          "whisper_target_user_ids",
+          "whisper_targets"
+        );
+      } else {
+        api.includePostAttributes(
+          "is_whisper_to_user",
+          "whisper_target_user_ids",
+          "whisper_targets"
+        );
+      }
 
       api.decorateCookedElement(
         (cookedEl, helper) => {

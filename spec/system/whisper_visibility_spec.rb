@@ -177,7 +177,7 @@ RSpec.describe "Whisper visibility", type: :system do
       SiteSetting.enable_category_group_moderation = true
       group = Fabricate(:group)
       group.add(cat_mod)
-      category.update!(reviewable_by_group: group)
+      category.update!(reviewable_by_group_id: group.id)
     end
 
     it "shows a mixed-audience whisper to a category group moderator" do
@@ -209,9 +209,9 @@ RSpec.describe "Whisper visibility", type: :system do
   context "the admin site setting" do
     it "exposes the master switch under the Discourse Whisper category" do
       sign_in(admin)
-      visit("/admin/site_settings/category/discourse_whisper")
+      visit("/admin/site_settings/category/all_results?filter=discourse_whisper_enabled")
       expect(page).to have_css(
-        ".admin-detail .setting[data-setting='discourse_whisper_enabled'], .setting[data-setting='discourse_whisper_enabled']",
+        ".setting[data-setting='discourse_whisper_enabled']",
         wait: 10,
       )
       shot("19_admin_site_setting")

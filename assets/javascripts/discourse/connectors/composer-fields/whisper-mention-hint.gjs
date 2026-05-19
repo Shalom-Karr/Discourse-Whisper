@@ -1,6 +1,6 @@
 import Component from "@glimmer/component";
 import { tracked } from "@glimmer/tracking";
-import { action } from "@ember/object";
+import { action, get } from "@ember/object";
 import DButton from "discourse/components/d-button";
 import { ajax } from "discourse/lib/ajax";
 import { popupAjaxError } from "discourse/lib/ajax-error";
@@ -14,15 +14,22 @@ export default class WhisperMentionHint extends Component {
     return this.args.outletArgs?.model;
   }
 
+  // `whisperTarget*` are set with Ember's `set` and are not @tracked
+  // native fields, so they are read with Ember's `get` to consume the
+  // classic property tag and re-render when the whisper is armed.
   get pendingMentions() {
+    const composer = this.composer;
     return computePendingMentions(
-      this.composer?.reply || "",
-      this.composer?.whisperTargetUsernames || []
+      composer?.reply || "",
+      (composer && get(composer, "whisperTargetUsernames")) || []
     );
   }
 
   get isWhisperAlreadyArmed() {
-    return (this.composer?.whisperTargetUserIds || []).length > 0;
+    const composer = this.composer;
+    return composer
+      ? (get(composer, "whisperTargetUserIds") || []).length > 0
+      : false;
   }
 
   get shouldShow() {

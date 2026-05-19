@@ -76,6 +76,9 @@ RSpec.describe "Whisper composer", type: :system do
       chooser.select_row_by_value(recipient_two.username)
       shot("03_whisper_modal_users_selected")
 
+      # Collapse the user picker so its dropdown stops overlapping the
+      # modal footer, otherwise the confirm button click is intercepted.
+      chooser.collapse
       find(".whisper-target-modal .btn-primary").click
       expect(page).to have_no_css(".whisper-target-modal", wait: 10)
 
@@ -149,6 +152,7 @@ RSpec.describe "Whisper composer", type: :system do
       chooser.expand
       chooser.search(recipient_one.username)
       chooser.select_row_by_value(recipient_one.username)
+      chooser.collapse
       find(".whisper-target-modal .btn-primary").click
 
       expect(page).to have_css(".whisper-composer-target-pill", wait: 10)

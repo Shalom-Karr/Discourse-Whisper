@@ -1,5 +1,5 @@
 import Component from "@glimmer/component";
-import { action } from "@ember/object";
+import { action, get } from "@ember/object";
 import DButton from "discourse/components/d-button";
 import { i18n } from "discourse-i18n";
 
@@ -16,12 +16,21 @@ export default class WhisperArmedPill extends Component {
     return this.args.outletArgs?.model;
   }
 
+  // `whisperTargetUserIds` / `whisperTargetUsernames` are set on the
+  // composer model with Ember's `set`. They are not @tracked native
+  // fields, so they must be READ with Ember's `get` — that consumes the
+  // classic property tag, which is what `set` dirties. A plain
+  // `composer.whisperTargetUserIds` access would never re-render the pill.
   get armed() {
-    return (this.composer?.whisperTargetUserIds || []).length > 0;
+    const composer = this.composer;
+    return composer
+      ? (get(composer, "whisperTargetUserIds") || []).length > 0
+      : false;
   }
 
   get usernames() {
-    return this.composer?.whisperTargetUsernames || [];
+    const composer = this.composer;
+    return composer ? get(composer, "whisperTargetUsernames") || [] : [];
   }
 
   @action
