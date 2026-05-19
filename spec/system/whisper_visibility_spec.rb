@@ -128,12 +128,15 @@ RSpec.describe "Whisper visibility", type: :system do
 
   context "replying to a whisper" do
     it "auto-arms a whisper back to the rest of the audience" do
-      wp = whisper!([recipient.id, recipient_two.id])
+      whisper!([recipient.id, recipient_two.id])
       sign_in(recipient)
       visit_topic
 
-      expect(page).to have_css(".whisper-target-banner", wait: 10)
-      within("article[data-post-number='#{wp.post_number}']") do
+      banner = find(".whisper-target-banner", wait: 10)
+      # Reply to the whisper post itself (not the topic footer) so the
+      # composer's `post` is the whisper and the auto-arm fires.
+      whisper_post = banner.ancestor("article")
+      within(whisper_post) do
         find(
           ".post-controls .post-action-menu__reply, .post-controls .reply",
           match: :first,
