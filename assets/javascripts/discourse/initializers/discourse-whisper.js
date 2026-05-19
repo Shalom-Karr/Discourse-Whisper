@@ -1,11 +1,13 @@
 import { withPluginApi } from "discourse/lib/plugin-api";
+import { i18n } from "discourse-i18n";
 import WhisperTargetModal from "../components/whisper-target-modal";
+import { computeReplyAudience } from "../lib/reply-audience";
 
 export default {
   name: "discourse-whisper",
 
   initialize() {
-    withPluginApi("1.8.0", (api) => {
+    withPluginApi((api) => {
       const siteSettings = api.container.lookup("service:site-settings");
       if (!siteSettings?.discourse_whisper_enabled) {
         return;
@@ -55,7 +57,10 @@ export default {
           }
 
           const parent = cookedEl.parentElement;
-          if (!parent || parent.querySelector(":scope > .whisper-target-banner")) {
+          if (
+            !parent ||
+            parent.querySelector(":scope > .whisper-target-banner")
+          ) {
             return;
           }
 
@@ -87,7 +92,7 @@ export default {
 
           const label = document.createElement("span");
           label.className = "whisper-target-label";
-          label.textContent = " whisper to ";
+          label.textContent = ` ${i18n("discourse_whisper.post.whisper_to")} `;
           banner.appendChild(label);
 
           targets.forEach((t, i) => {
@@ -124,23 +129,7 @@ export default {
           return;
         }
 
-        // Build the reply audience: the original author plus every target,
-        // minus the current user themself.
-        const byId = new Map();
-        const add = (id, username, avatarTemplate) => {
-          if (!id || id === currentUser.id) {
-            return;
-          }
-          if (!byId.has(id)) {
-            byId.set(id, { id, username, avatar_template: avatarTemplate });
-          }
-        };
-        add(post.user_id, post.username, post.avatar_template);
-        (post.whisper_targets || []).forEach((t) => {
-          add(t.id, t.username, t.avatar_template);
-        });
-
-        const replyAudience = [...byId.values()];
+        const replyAudience = computeReplyAudience(post, currentUser.id);
         if (!replyAudience.length) {
           return;
         }

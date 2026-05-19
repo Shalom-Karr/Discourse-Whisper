@@ -2,13 +2,18 @@ en:
   js:
     discourse_whisper:
       toolbar:
-        title: "Send as a whisper to a specific user"
+        title: "Whisper this post to one or more users"
       composer:
         modal_title: "Whisper to…"
-        modal_instructions: "Only this user, category moderators, and staff will be able to see this post."
+        modal_instructions: "Pick up to 10 users. Only those recipients — plus the author, site staff, and category moderators (unless the whisper is staff-only) — will be able to see this post."
         search_placeholder: "Search for a user"
-        confirm: "Set whisper target"
-        clear_target: "Clear whisper target"
+        confirm: "Set whisper targets"
+        clear_target: "Clear whisper targets"
+        armed_pill_prefix: "Whispering to"
+        clear_armed: "Cancel whisper — post as a normal reply"
+      mention_hint:
+        whisper_to: "Whisper to %{names}"
+        also_whisper_to: "Also whisper to %{names}"
       post:
         whisper_to: "whisper to"
   admin_js:

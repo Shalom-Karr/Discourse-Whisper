@@ -142,7 +142,52 @@ The `on(:post_created)` event handler that writes the `whisper_target_user_ids` 
 
 On the **Actions** tab of the GitHub repo, a green check on the **Plugin Tests** workflow means the full spec suite passed. If it fails, click into the run to see the `Run plugin specs` step — RSpec's `--format documentation` output lists every example with its describe-context hierarchy, so failures are easy to locate.
 
-## Running the specs locally
+## Node helper tests
+
+Pure-JS helpers under `assets/javascripts/discourse/lib/` are exercised with Node's built-in test runner. No browser, no Ember, no CI setup needed — just Node 22+:
+
+```bash
+node --test test/node/run-helper-tests.mjs
+```
+
+99 tests covering the `MENTION_RE` regex and the reply-audience helper. The workflow runs this as a dedicated CI step on every push.
+
+## Running the specs locally (Docker, fast)
+
+For rapid iteration, use the `discourse/discourse_dev:release` image — it ships with Ruby, Postgres, Redis, and Discourse's gem bundle pre-installed. With `$DISCOURSE_DIR` pointing at a host checkout of `discourse/discourse` and this plugin mounted into `$DISCOURSE_DIR/plugins/discourse-whisper`:
+
+```bash
+docker run -d \
+  -v "$DISCOURSE_DIR/data/postgres:/shared/postgres_data:delegated" \
+  -v "$DISCOURSE_DIR:/src:delegated" \
+  -v "$PWD:/src/plugins/discourse-whisper:delegated" \
+  --hostname=discourse --name=discourse_dev \
+  discourse/discourse_dev:release /sbin/boot
+
+# one-time per fresh DB volume:
+docker exec -u discourse:discourse -w /src discourse_dev pnpm install
+docker exec -u discourse:discourse -w /src \
+  -e RAILS_ENV=test -e LOAD_PLUGINS=1 \
+  discourse_dev bin/rake db:create db:migrate
+
+# run the full plugin suite:
+docker exec -u discourse:discourse -w /src \
+  -e RAILS_ENV=test -e LOAD_PLUGINS=1 \
+  discourse_dev bin/rspec plugins/discourse-whisper/spec
+```
+
+Use `docker exec` directly (not the `d/rspec` wrapper) from non-interactive contexts — `d/exec` uses `-it` and needs a TTY.
+
+Lint with the in-image runner:
+
+```bash
+docker exec -u discourse:discourse -w /src discourse_dev bin/lint \
+  plugins/discourse-whisper/lib/discourse_whisper/guardian_extensions.rb \
+  plugins/discourse-whisper/spec/lib/guardian_extensions_spec.rb
+# add --fix to auto-format
+```
+
+## Running the specs locally (no Docker)
 
 If you want to reproduce the workflow on your own machine without Docker:
 

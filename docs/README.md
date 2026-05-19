@@ -6,7 +6,8 @@ Welcome to the documentation for the **discourse-whisper** Discourse plugin.
 
 - [Setup & Installation](setup.md) — how to install, enable, and configure the plugin
 - [How Whispers Work](whispers.md) — the visibility rules, the composer UX, and auto-whisper-back on reply
-- [Running the Test Suite](testing.md) — how the GitHub Actions CI workflow runs the specs, and how to reproduce it locally
+- [Architecture](architecture.md) — the three enforcement hooks (Guardian, TopicView, Search), the shared SQL filter, and the composer integration
+- [Running the Test Suite](testing.md) — the GitHub Actions CI workflow, the Docker local loop, and the Node helper tests
 
 ## Quick overview
 

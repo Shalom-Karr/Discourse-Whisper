@@ -4,11 +4,8 @@ import { action } from "@ember/object";
 import DButton from "discourse/components/d-button";
 import { ajax } from "discourse/lib/ajax";
 import { popupAjaxError } from "discourse/lib/ajax-error";
-
-// Matches @username tokens in the composer body. Username charset mirrors
-// Discourse's default: letters, numbers, underscore, dot, dash, up to 60 chars.
-// The (?:^|[\s(]) prefix keeps us from matching email addresses like foo@bar.
-const MENTION_RE = /(?:^|[\s(])@([a-zA-Z0-9_.\-]{1,60})/g;
+import { i18n } from "discourse-i18n";
+import { pendingMentions as computePendingMentions } from "../../lib/whisper-mentions";
 
 export default class WhisperMentionHint extends Component {
   @tracked resolving = false;
@@ -17,38 +14,11 @@ export default class WhisperMentionHint extends Component {
     return this.args.outletArgs?.model;
   }
 
-  get mentionedUsernames() {
-    const raw = this.composer?.reply || "";
-    if (!raw.includes("@")) {
-      return [];
-    }
-    const seen = new Set();
-    const out = [];
-    let match;
-    MENTION_RE.lastIndex = 0;
-    while ((match = MENTION_RE.exec(raw)) !== null) {
-      const u = match[1];
-      const key = u.toLowerCase();
-      if (!seen.has(key)) {
-        seen.add(key);
-        out.push(u);
-      }
-    }
-    return out;
-  }
-
-  get alreadyArmedLowercase() {
-    const current = this.composer?.whisperTargetUsernames || [];
-    return new Set(current.map((u) => u.toLowerCase()));
-  }
-
   get pendingMentions() {
-    const mentioned = this.mentionedUsernames;
-    if (!mentioned.length) {
-      return [];
-    }
-    const armed = this.alreadyArmedLowercase;
-    return mentioned.filter((u) => !armed.has(u.toLowerCase()));
+    return computePendingMentions(
+      this.composer?.reply || "",
+      this.composer?.whisperTargetUsernames || []
+    );
   }
 
   get isWhisperAlreadyArmed() {
@@ -61,9 +31,12 @@ export default class WhisperMentionHint extends Component {
 
   get buttonLabel() {
     const names = this.pendingMentions.map((u) => `@${u}`).join(", ");
-    return this.isWhisperAlreadyArmed
-      ? `Also whisper to ${names}`
-      : `Whisper to ${names}`;
+    return i18n(
+      this.isWhisperAlreadyArmed
+        ? "discourse_whisper.mention_hint.also_whisper_to"
+        : "discourse_whisper.mention_hint.whisper_to",
+      { names }
+    );
   }
 
   @action

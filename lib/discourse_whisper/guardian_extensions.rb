@@ -9,7 +9,10 @@ module DiscourseWhisper
       raw_targets = post.custom_fields["whisper_target_user_ids"]
       return super if raw_targets.blank?
 
-      target_ids = Array(raw_targets).map(&:to_i).reject { |id| id <= 0 }
+      target_ids =
+        Array(raw_targets)
+          .map { |id| id.is_a?(Numeric) || id.is_a?(String) ? id.to_i : 0 }
+          .reject { |id| id <= 0 }
       return super if target_ids.empty?
 
       # Anonymous / unauthenticated viewers never see whispers
@@ -19,11 +22,16 @@ module DiscourseWhisper
       return super if post.user_id == @user.id
       # Any target recipient sees it
       return super if target_ids.include?(@user.id)
-      # Site staff see it for oversight
+      # Site staff (admins + moderators) see it for oversight
       return super if @user.staff?
-      # Category group moderators see it for oversight
+
+      # Category group moderators see it for oversight — UNLESS the whisper
+      # is a purely staff-to-staff conversation (admin/mod → admin/mod). In
+      # that case, cat group mods have no oversight.
       category = post.topic&.category
-      return super if category && is_category_group_moderator?(category)
+      if category && is_category_group_moderator?(category)
+        return super unless DiscourseWhisper.staff_to_staff?(post, target_ids)
+      end
 
       false
     end

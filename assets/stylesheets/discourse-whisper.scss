@@ -1,24 +1,73 @@
-.d-editor-button-bar button[data-id="discourse-whisper-target"] {
-  &.whisper-armed,
-  &[aria-pressed="true"] {
+// Indigo-tint the composer whenever a whisper is armed. The armed-pill
+// connector (rendered into the composer-fields outlet only when
+// whisperTargetUserIds is set) is the DOM signal; :has() does the rest.
+.composer-fields:has(.whisper-composer-target-pill),
+.d-editor-container:has(.whisper-composer-target-pill) {
+  background-color: rgb(99, 102, 241, 0.08);
+}
+
+// The eye toolbar button glows indigo when a whisper is armed.
+.composer-fields:has(.whisper-composer-target-pill)
+  .d-editor-button-bar
+  button[data-id="discourse-whisper-target"] {
+  color: var(--tertiary);
+  background-color: rgb(99, 102, 241, 0.18);
+}
+
+.whisper-composer-target-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 6px 0 4px;
+  padding: 3px 6px 3px 12px;
+  font-size: var(--font-down-1);
+  color: var(--tertiary);
+  background: rgb(99, 102, 241, 0.12);
+  border: 1px solid rgb(99, 102, 241, 0.3);
+  border-radius: 999px;
+  width: fit-content;
+  max-width: 100%;
+  animation: whisper-hint-fade-in 120ms ease-out;
+
+  &__label {
+    opacity: 0.85;
+  }
+
+  &__users {
+    display: inline;
+  }
+
+  &__user {
+    font-weight: 600;
+  }
+
+  &__close.btn {
+    padding: 0 6px;
+    min-width: 0;
+    min-height: 0;
     color: var(--tertiary);
+    background: transparent;
+
+    &:hover {
+      background: rgb(99, 102, 241, 0.25);
+    }
+
+    .d-icon {
+      margin: 0;
+    }
   }
 }
 
-.d-editor-container.whisper-armed,
-.composer-fields:has(.whisper-composer-target-pill) {
-  background-color: rgba(99, 102, 241, 0.08);
-  border-color: rgba(99, 102, 241, 0.35);
-}
-
+// Post-stream banner that appears above a received whisper's cooked body,
+// rendered by api.decorateCookedElement in the initializer.
 .whisper-target-banner {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   font-size: var(--font-down-1);
   color: var(--tertiary);
-  background: rgba(99, 102, 241, 0.08);
-  border: 1px solid rgba(99, 102, 241, 0.25);
+  background: rgb(99, 102, 241, 0.08);
+  border: 1px solid rgb(99, 102, 241, 0.25);
   border-radius: 999px;
   padding: 2px 10px;
   margin: 0 0 8px;
@@ -40,8 +89,8 @@
 }
 
 article.topic-post.whisper-to-user .cooked {
-  background: rgba(99, 102, 241, 0.04);
-  border-left: 3px solid rgba(99, 102, 241, 0.5);
+  background: rgb(99, 102, 241, 0.04);
+  border-left: 3px solid rgb(99, 102, 241, 0.5);
   padding-left: 12px;
 }
 
@@ -62,14 +111,14 @@ article.topic-post.whisper-to-user .cooked {
   animation: whisper-hint-fade-in 120ms ease-out;
 
   &__btn.btn {
-    background: rgba(99, 102, 241, 0.08);
-    border: 1px solid rgba(99, 102, 241, 0.25);
+    background: rgb(99, 102, 241, 0.08);
+    border: 1px solid rgb(99, 102, 241, 0.25);
     color: var(--tertiary);
     font-size: var(--font-down-1);
 
     &:hover:not([disabled]) {
-      background: rgba(99, 102, 241, 0.18);
-      border-color: rgba(99, 102, 241, 0.5);
+      background: rgb(99, 102, 241, 0.18);
+      border-color: rgb(99, 102, 241, 0.5);
     }
 
     .d-icon {
@@ -83,6 +132,7 @@ article.topic-post.whisper-to-user .cooked {
     opacity: 0;
     transform: translateY(-2px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);

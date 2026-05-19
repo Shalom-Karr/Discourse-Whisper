@@ -1,18 +1,17 @@
 import Component from "@glimmer/component";
 import { tracked } from "@glimmer/tracking";
-import { action } from "@ember/object";
 import { hash } from "@ember/helper";
-import DModal from "discourse/components/d-modal";
+import { action } from "@ember/object";
 import DButton from "discourse/components/d-button";
-import EmailGroupUserChooser from "select-kit/components/email-group-user-chooser";
+import DModal from "discourse/components/d-modal";
 import { ajax } from "discourse/lib/ajax";
 import { popupAjaxError } from "discourse/lib/ajax-error";
-import i18n from "discourse-common/helpers/i18n";
+import EmailGroupUserChooser from "discourse/select-kit/components/email-group-user-chooser";
+import { i18n } from "discourse-i18n";
 
 export default class WhisperTargetModal extends Component {
-  @tracked selection = Array.isArray(
-    this.args.model?.composer?.whisperTargetUsernames
-  )
+  @tracked
+  selection = Array.isArray(this.args.model?.composer?.whisperTargetUsernames)
     ? [...this.args.model.composer.whisperTargetUsernames]
     : [];
   @tracked saving = false;
@@ -42,7 +41,9 @@ export default class WhisperTargetModal extends Component {
     try {
       const lookups = await Promise.all(
         this.selection.map((username) =>
-          ajax(`/u/${encodeURIComponent(username)}.json`).then((data) => data?.user).catch(() => null)
+          ajax(`/u/${encodeURIComponent(username)}.json`)
+            .then((data) => data?.user)
+            .catch(() => null)
         )
       );
       const users = lookups.filter(Boolean);

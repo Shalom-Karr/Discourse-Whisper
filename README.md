@@ -23,14 +23,16 @@ Architecturally inspired by [discourse-mini-mod](https://github.com/alltechdev/d
 
 ## Visibility matrix
 
-| Viewer | Sees the whisper? |
-|---|---|
-| Author | ✅ Yes |
-| Any target user | ✅ Yes |
-| Admin | ✅ Yes (oversight) |
-| Moderator | ✅ Yes (oversight) |
-| Category group moderator (on that category) | ✅ Yes (oversight) |
-| Anyone else (incl. anonymous) | ❌ No — fully hidden |
+| Viewer | Mixed-audience whisper | Staff-to-staff whisper |
+|---|---|---|
+| Author | ✅ | ✅ |
+| Any target user | ✅ | ✅ |
+| Admin | ✅ (oversight) | ✅ (oversight) |
+| Moderator | ✅ (oversight) | ✅ (oversight) |
+| Category group moderator (on that category) | ✅ (oversight) | ❌ (no staff-on-staff oversight) |
+| Anyone else (incl. anonymous) | ❌ | ❌ |
+
+*Staff-to-staff* = author is admin/moderator **and** every target resolves to an admin/moderator. Category group moderators are excluded from these because they have no oversight over staff-only conversations.
 
 ## Settings
 
