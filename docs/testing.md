@@ -1,235 +1,177 @@
-# Running the Test Suite
+# Tests & screenshots
 
-This plugin uses **GitHub Actions** to run its RSpec specs against the main branch of `discourse/discourse`. The workflow is defined in [`.github/workflows/plugin-tests.yml`](../.github/workflows/plugin-tests.yml).
+## Test suite
 
-The workflow is self-contained — no Docker image, no pre-baked environment, no local Discourse checkout required. It spins up a fresh Postgres + Redis on the runner, clones Discourse and this plugin side-by-side, installs gems and JS deps, migrates the test DB, and runs `rspec plugins/discourse-whisper/spec`.
+The plugin is covered by three CI workflows (see [`.github/workflows/`](../.github/workflows/)):
 
-## Triggering the suite
+| Workflow | What it runs |
+|---|---|
+| **Plugin Tests** | `rspec` — `spec/lib` and `spec/serializers` (the Guardian visibility rule, the custom-field writer, the post serializer) |
+| **Frontend System Tests** | `rspec spec/system` — Capybara/Playwright end-to-end specs; uploads the screenshots below as the `ui-screenshots` artifact |
+| **Node helper tests** | `node --test test/node/run-helper-tests.mjs` — the pure-logic mention and reply-audience suites |
 
-The workflow runs automatically on:
+The system specs run in a real Chromium browser driven by Playwright. The CI workflow ([`frontend-tests.yml`](../.github/workflows/frontend-tests.yml)) clones `discourse/discourse`, mounts this plugin, builds the Ember assets, installs the Playwright browser, and runs `spec/system`. Every screenshot below is produced by a passing system spec, so they double as a visual regression record.
 
-- **Push to `main`** — every commit on main runs the full suite
-- **Pull request** — every PR runs the full suite against the PR head
+## Running the system specs
 
-You can also re-run it manually from the **Actions** tab → **Plugin Tests** → **Re-run jobs**.
-
-## What the workflow does
-
-Each job step in order:
-
-### 1. Checkout Discourse
-
-```yaml
-- uses: actions/checkout@v4
-  with:
-    repository: discourse/discourse
-    path: discourse
-```
-
-Clones `discourse/discourse` (main branch) into `./discourse` on the runner.
-
-### 2. Checkout the plugin
-
-```yaml
-- uses: actions/checkout@v4
-  with:
-    path: discourse/plugins/discourse-whisper
-```
-
-Clones this repo directly into `discourse/plugins/discourse-whisper` — the path Discourse's test loader expects.
-
-### 3. Set up Ruby 3.4
-
-```yaml
-- uses: ruby/setup-ruby@v1
-  with:
-    ruby-version: "3.4"
-    bundler-cache: false
-```
-
-Installs the Ruby version Discourse targets.
-
-### 4. System dependencies
+From a Discourse checkout with the plugin mounted at `plugins/discourse-whisper`:
 
 ```bash
-sudo apt-get update -qq
-sudo apt-get install -y libpq-dev libssl-dev imagemagick
+LOAD_PLUGINS=1 bundle exec rspec plugins/discourse-whisper/spec/system --format documentation
 ```
 
-These are the native libs Discourse's gems link against.
+Screenshots are written to `discourse/tmp/capybara/`. In CI they are published as the `ui-screenshots` artifact and committed into [`screenshots/`](../screenshots/).
 
-### 5. Redis
+---
+
+## Whisper composer
+
+End-to-end coverage for arming a whisper from the composer — [`spec/system/whisper_composer_spec.rb`](../spec/system/whisper_composer_spec.rb).
+
+### The whisper eye button in the composer toolbar
+
+The composer toolbar gains a 👁 eye button in the `extras` group — the entry point for arming a whisper.
+
+![The whisper eye button in the composer toolbar](../screenshots/01_composer_toolbar_eye_button.png)
+
+### The empty "Whisper to…" modal
+
+Clicking the eye button opens a modal with a multi-user picker, before any user is chosen.
+
+![The empty whisper-target modal](../screenshots/02_whisper_modal_empty.png)
+
+### Recipients selected in the modal
+
+The author picks up to 10 users as the whisper audience.
+
+![Two users selected in the whisper modal](../screenshots/03_whisper_modal_users_selected.png)
+
+### The armed whisper pill above the composer
+
+After confirming, an indigo "Whispering to …" pill appears above the composer and the fields pick up a pale indigo tint.
+
+![The armed whisper pill above the composer](../screenshots/04_composer_armed_pill.png)
+
+### The posted whisper, author view
+
+Once posted, the whisper shows with the 👁 `whisper to …` banner and a soft indigo left border.
+
+![A posted whisper as the author sees it](../screenshots/05_whisper_posted_author_view.png)
+
+### The mention hint pill
+
+Typing an `@mention` that is not yet in the audience makes a "Whisper to @username" hint pill appear below the composer.
+
+![The mention hint pill below the composer](../screenshots/06_mention_hint_pill.png)
+
+### A whisper armed via the mention hint
+
+Clicking the hint resolves the mentioned users and arms the whisper — the same composer state the modal produces.
+
+![A whisper armed via the mention hint](../screenshots/07_whisper_armed_via_mention_hint.png)
+
+### The armed pill, before it is cleared
+
+An armed whisper pill in place, about to be cleared with its ✕ button.
+
+![The armed whisper pill before clearing](../screenshots/08_armed_pill_before_clearing.png)
+
+---
+
+## Whisper visibility
+
+End-to-end coverage for who can see a whisper across every read path — [`spec/system/whisper_visibility_spec.rb`](../spec/system/whisper_visibility_spec.rb).
+
+### A recipient sees the whisper
+
+A target recipient sees the whisper post in the topic stream with its banner and indigo border.
+
+![A recipient sees the whisper](../screenshots/09_recipient_sees_whisper.png)
+
+### A non-recipient does not see the whisper
+
+A regular user not in the audience sees the topic with the whisper post simply absent — no placeholder, no gap.
+
+![A non-recipient does not see the whisper](../screenshots/10_stranger_does_not_see_whisper.png)
+
+### A site admin sees the whisper for oversight
+
+Admins always see whispers so they can review or flag them.
+
+![An admin sees the whisper for oversight](../screenshots/11_admin_oversight_view.png)
+
+### A site moderator sees the whisper for oversight
+
+Moderators have the same oversight visibility as admins.
+
+![A moderator sees the whisper for oversight](../screenshots/12_moderator_oversight_view.png)
+
+### A multi-recipient whisper banner
+
+When a whisper has multiple recipients, the banner lists each one as a profile link.
+
+![A multi-user whisper banner](../screenshots/13_multi_user_whisper_banner.png)
+
+### A reply composer auto-armed with a whisper back
+
+Opening the composer to reply to a whisper pre-arms a whisper back to the rest of the original audience.
+
+![A reply composer auto-armed with a whisper back](../screenshots/14_reply_composer_auto_armed.png)
+
+### A recipient finds the whisper in search
+
+A recipient searching for text inside a whisper gets the post back in the search results.
+
+![A recipient sees the whisper in search results](../screenshots/15_search_recipient_sees_hit.png)
+
+### A stranger does not find the whisper in search
+
+The same search as a non-recipient returns nothing — the whisper is filtered out of search hits.
+
+![A stranger does not see the whisper in search results](../screenshots/16_search_stranger_no_hit.png)
+
+### A category group moderator sees the whisper for oversight
+
+A category group moderator of the post's category sees mixed-audience whispers in that category.
+
+![A category group moderator sees the whisper](../screenshots/17_category_moderator_oversight.png)
+
+### With the plugin disabled, the whisper is visible to all
+
+When `discourse_whisper_enabled` is off, whisper posts become ordinary posts visible to everyone, with no banner.
+
+![With the plugin disabled the whisper is visible to all](../screenshots/18_plugin_disabled_visible_to_all.png)
+
+### The admin site setting
+
+The plugin's single master switch, `discourse_whisper_enabled`, under the Discourse Whisper settings category.
+
+![The discourse_whisper_enabled site setting](../screenshots/19_admin_site_setting.png)
+
+---
+
+## RSpec unit & serializer specs
+
+The non-browser specs live in [`spec/lib/`](../spec/lib/) and [`spec/serializers/`](../spec/serializers/):
+
+- **`guardian_extensions_spec.rb`** — every branch of the `Guardian#can_see_post?` visibility rule: plugin disabled, single- and multi-target whispers, author / target / admin / moderator / category-group-moderator / stranger / anonymous viewers, staff-to-staff whispers, and malformed stored values.
+- **`post_custom_fields_spec.rb`** — the `before_create_post` handler that writes the `whisper_target_user_ids` custom field: de-duplication, the `MAX_WHISPER_TARGETS` cap, and defensive drops for bogus ids.
+- **`post_serializer_spec.rb`** — the `is_whisper_to_user`, `whisper_target_user_ids`, and `whisper_targets` serializer attributes.
 
 ```bash
-sudo apt-get install -y redis-server
-sudo service redis-server start
-redis-cli ping
+LOAD_PLUGINS=1 bundle exec rspec plugins/discourse-whisper/spec/lib plugins/discourse-whisper/spec/serializers
 ```
-
-A local Redis instance; Discourse's test suite uses it for caching and message bus.
-
-### 6. Node + pnpm
-
-```yaml
-- uses: actions/setup-node@v4
-  with:
-    node-version: 22
-- run: npm install -g pnpm
-```
-
-Node 22 with pnpm — required because Discourse's `db:migrate` depends on `assets:precompile:asset_processor`, which in turn reads the pnpm lockfile to compute a cache digest. Without pnpm installed, migrations abort.
-
-### 7. JS dependencies
-
-```bash
-pnpm install
-```
-
-Run inside the `discourse/` directory. This resolves and installs Discourse's frontend packages — fast because Discourse's pnpm lockfile is pinned.
-
-### 8. Bundle install
-
-```bash
-bundle install --jobs 4 --retry 3
-```
-
-Installs Discourse's gem bundle. This is the slowest step — typically 2–5 minutes on a cold runner.
-
-### 9. Database setup
-
-```bash
-bundle exec rake db:create db:migrate
-```
-
-Creates and migrates the `discourse_test` Postgres database. `RAILS_ENV=test` and `LOAD_PLUGINS=1` are set at the job level so plugin migrations (if any) are included.
-
-### 10. Run the plugin specs
-
-```bash
-bundle exec rspec plugins/discourse-whisper/spec \
-  --format documentation
-```
-
-`LOAD_PLUGINS=1` is the critical bit — without it, `Guardian.prepend(DiscourseWhisper::GuardianExtensions)` in `after_initialize` never fires, and the guardian specs fail because the override isn't loaded.
-
-## What gets tested
-
-The specs live in [`spec/lib/`](../spec/lib/) and cover:
-
-### `guardian_extensions_spec.rb`
-
-The visibility rule for `Guardian#can_see_post?` on whisper posts. Cases:
-
-- Plugin disabled → falls through to default Guardian behaviour
-- **Single-target whisper:** author / target / admin / moderator → ✅ visible; stranger / anonymous → ❌ hidden
-- **Multi-target whisper:** author / first target / second target → ✅ visible; stranger → ❌ hidden
-- Category group moderator → ✅ visible (oversight)
-- Non-whisper post → falls through to defaults
-- Malformed / zero / empty target list → falls through to defaults (graceful degradation)
-
-### `post_custom_fields_spec.rb`
-
-The `on(:post_created)` event handler that writes the `whisper_target_user_ids` custom field. Cases:
-
-- Single valid target id → custom field is saved
-- Multiple valid target ids → all are saved
-- Mix of valid and bogus ids → bogus are filtered out, valid ones are saved
-- All ids bogus → custom field is **not** saved
-- Zero / negative ids → ignored
-- Plugin disabled → ignored even when valid ids are passed
-
-## Reading the results
-
-On the **Actions** tab of the GitHub repo, a green check on the **Plugin Tests** workflow means the full spec suite passed. If it fails, click into the run to see the `Run plugin specs` step — RSpec's `--format documentation` output lists every example with its describe-context hierarchy, so failures are easy to locate.
 
 ## Node helper tests
 
-Pure-JS helpers under `assets/javascripts/discourse/lib/` are exercised with Node's built-in test runner. No browser, no Ember, no CI setup needed — just Node 22+:
+Pure-JS helpers under `assets/javascripts/discourse/lib/` are exercised with Node's built-in test runner — no browser, no Ember:
 
 ```bash
 node --test test/node/run-helper-tests.mjs
 ```
 
-99 tests covering the `MENTION_RE` regex and the reply-audience helper. The workflow runs this as a dedicated CI step on every push.
+These cover the `MENTION_RE` regex, `pendingMentions`, and `computeReplyAudience` — including edge cases like email-vs-mention, non-ASCII, case-insensitive de-duplication, and the 60-character cap.
 
-## Running the specs locally (Docker, fast)
+## Why GitHub Actions
 
-For rapid iteration, use the `discourse/discourse_dev:release` image — it ships with Ruby, Postgres, Redis, and Discourse's gem bundle pre-installed. With `$DISCOURSE_DIR` pointing at a host checkout of `discourse/discourse` and this plugin mounted into `$DISCOURSE_DIR/plugins/discourse-whisper`:
-
-```bash
-docker run -d \
-  -v "$DISCOURSE_DIR/data/postgres:/shared/postgres_data:delegated" \
-  -v "$DISCOURSE_DIR:/src:delegated" \
-  -v "$PWD:/src/plugins/discourse-whisper:delegated" \
-  --hostname=discourse --name=discourse_dev \
-  discourse/discourse_dev:release /sbin/boot
-
-# one-time per fresh DB volume:
-docker exec -u discourse:discourse -w /src discourse_dev pnpm install
-docker exec -u discourse:discourse -w /src \
-  -e RAILS_ENV=test -e LOAD_PLUGINS=1 \
-  discourse_dev bin/rake db:create db:migrate
-
-# run the full plugin suite:
-docker exec -u discourse:discourse -w /src \
-  -e RAILS_ENV=test -e LOAD_PLUGINS=1 \
-  discourse_dev bin/rspec plugins/discourse-whisper/spec
-```
-
-Use `docker exec` directly (not the `d/rspec` wrapper) from non-interactive contexts — `d/exec` uses `-it` and needs a TTY.
-
-Lint with the in-image runner:
-
-```bash
-docker exec -u discourse:discourse -w /src discourse_dev bin/lint \
-  plugins/discourse-whisper/lib/discourse_whisper/guardian_extensions.rb \
-  plugins/discourse-whisper/spec/lib/guardian_extensions_spec.rb
-# add --fix to auto-format
-```
-
-## Running the specs locally (no Docker)
-
-If you want to reproduce the workflow on your own machine without Docker:
-
-1. Clone `discourse/discourse` somewhere
-2. Clone this plugin into `discourse/plugins/discourse-whisper`
-3. Install Postgres 16 and Redis locally and ensure they're running
-4. Install Ruby 3.4, Node 22, and pnpm
-5. `cd discourse && bundle install && pnpm install`
-6. `RAILS_ENV=test LOAD_PLUGINS=1 bundle exec rake db:create db:migrate`
-7. `RAILS_ENV=test LOAD_PLUGINS=1 bundle exec rspec plugins/discourse-whisper/spec`
-
-To run a single file:
-
-```bash
-RAILS_ENV=test LOAD_PLUGINS=1 bundle exec rspec \
-  plugins/discourse-whisper/spec/lib/guardian_extensions_spec.rb
-```
-
-To run a single describe block:
-
-```bash
-RAILS_ENV=test LOAD_PLUGINS=1 bundle exec rspec \
-  plugins/discourse-whisper/spec/lib/guardian_extensions_spec.rb \
-  -e "#can_see_post?"
-```
-
-To run a single example by line number:
-
-```bash
-RAILS_ENV=test LOAD_PLUGINS=1 bundle exec rspec \
-  plugins/discourse-whisper/spec/lib/guardian_extensions_spec.rb:42
-```
-
-## Why GitHub Actions instead of Docker?
-
-The [upstream `discourse-mini-mod` testing guide](https://github.com/alltechdev/discourse-mini-mod/blob/master/docs/testing.md) uses `discourse/discourse_dev:release` as a pre-baked Docker image to skip the `bundle install` cost on every run. That works well for a developer running specs repeatedly on one machine, because the image is downloaded once and reused.
-
-We went with GitHub Actions instead because:
-
-1. **Zero local setup for contributors** — a PR from a stranger gets the full test run for free, no Docker install, no Discourse checkout, no image pull
-2. **Pinned environment** — the runner image + the workflow steps are the same every time, so "works on my machine" is harder to hit
-3. **Single source of truth** — the green check on a PR is authoritative, tied to a specific commit SHA, visible to reviewers
-4. **Cost is still bounded** — the Discourse clone + `bundle install` is a few minutes on a cold runner, but the workflow only runs on push/PR, not on every local file save
-
-The tradeoff: a cold CI run is slower than a warm local Docker run (no cached bundle). For rapid iteration, `rspec` inside `discourse/discourse_dev` is still the better local loop — see the [mini-mod guide](https://github.com/alltechdev/discourse-mini-mod/blob/master/docs/testing.md) for that flow.
+The workflows are self-contained — no Docker image, no pre-baked environment, no local Discourse checkout required. Each run spins up a fresh Postgres + Redis on the runner, clones Discourse and this plugin side-by-side, and runs the suite. A green check on a PR is authoritative, tied to a specific commit SHA. For rapid local iteration, run `rspec` inside the `discourse/discourse_dev:release` Docker image instead.

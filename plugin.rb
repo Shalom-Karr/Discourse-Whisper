@@ -3,7 +3,7 @@
 # name: discourse-whisper
 # about: Per-user private whisper posts visible only to chosen target users, category moderators, and staff
 # version: 0.1.0
-# authors: Nate Karr
+# authors: Shalom Karr and Avrumi Sternheim
 # required_version: 2.7.0
 # enabled_site_setting: discourse_whisper_enabled
 

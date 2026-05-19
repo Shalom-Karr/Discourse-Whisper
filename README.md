@@ -63,8 +63,24 @@ Then rebuild:
 
 ## Documentation
 
-See [`docs/`](docs/) for detailed documentation:
+See [`docs/`](docs/) for detailed documentation. Every page is cross-linked from the [docs index](docs/README.md).
 
-- [Setup & Installation](docs/setup.md)
-- [How Whispers Work](docs/whispers.md)
-- [Running the Test Suite](docs/testing.md) — using GitHub Actions
+**Getting started**
+
+- [Setup & Installation](docs/setup.md) — install, enable, and configure the plugin
+- [Feature list](docs/features.md) — everything the plugin adds
+- [Settings & features index](docs/settings.md) — the site setting and a link to every feature
+
+**Features**
+
+- [Whisper a post](docs/whisper-a-post.md) — the toolbar eye button and the "Whisper to…" modal
+- [Mention whisper hint](docs/mention-whisper-hint.md) — arm a whisper straight from an `@mention`
+- [Auto-whisper-back on reply](docs/auto-whisper-back.md) — replies stay in the same private group
+- [Whisper visibility](docs/whisper-visibility.md) — who can read a whisper, and how it is enforced
+- [`discourse_whisper_enabled`](docs/discourse-whisper-enabled.md) — the master switch
+
+**Reference**
+
+- [How Whispers Work](docs/whispers.md) — the visibility rules and composer UX in prose
+- [Architecture](docs/architecture.md) — the three enforcement hooks and the shared SQL filter
+- [Tests & screenshots](docs/testing.md) — the CI workflows, the Node helper tests, and a screenshot of every feature
