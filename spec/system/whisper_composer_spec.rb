@@ -7,7 +7,11 @@ require "rails_helper"
 # posting a whisper. A screenshot is captured at every meaningful UI step;
 # screenshots are written to tmp/capybara/ and published as the CI artifact.
 RSpec.describe "Whisper composer", type: :system do
-  fab!(:author) { Fabricate(:user, username: "author_amy") }
+  # TL2 + refreshed auto-groups so the author's posts are not held for
+  # approval — that would keep a posted whisper out of the topic stream.
+  fab!(:author) do
+    Fabricate(:user, username: "author_amy", trust_level: TrustLevel[2], refresh_auto_groups: true)
+  end
   fab!(:recipient_one) { Fabricate(:user, username: "target_tom") }
   fab!(:recipient_two) { Fabricate(:user, username: "target_tina") }
   fab!(:category)
@@ -18,6 +22,8 @@ RSpec.describe "Whisper composer", type: :system do
     SiteSetting.discourse_whisper_enabled = true
     SiteSetting.min_post_length = 5
     SiteSetting.body_min_entropy = 1
+    SiteSetting.approve_unless_trust_level = 0
+    SiteSetting.approve_post_count = 0
   end
 
   def shot(name)

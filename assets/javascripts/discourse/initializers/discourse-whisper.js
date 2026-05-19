@@ -55,10 +55,16 @@ export default {
 
       api.decorateCookedElement(
         (cookedEl, helper) => {
-          if (!helper) {
-            return;
-          }
-          const post = helper.getModel?.();
+          const post = helper?.getModel?.();
+          // eslint-disable-next-line no-console
+          console.log("[whisper-debug] decorate", {
+            hasHelper: !!helper,
+            hasPost: !!post,
+            isWhisper: post?.is_whisper_to_user,
+            targetsLen: Array.isArray(post?.whisper_targets)
+              ? post.whisper_targets.length
+              : "n/a",
+          });
           if (!post?.is_whisper_to_user) {
             return;
           }

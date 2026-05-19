@@ -177,7 +177,7 @@ RSpec.describe "Whisper visibility", type: :system do
       SiteSetting.enable_category_group_moderation = true
       group = Fabricate(:group)
       group.add(cat_mod)
-      category.update!(reviewable_by_group_id: group.id)
+      CategoryModerationGroup.create!(category_id: category.id, group_id: group.id)
     end
 
     it "shows a mixed-audience whisper to a category group moderator" do
