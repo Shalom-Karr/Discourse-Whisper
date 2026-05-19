@@ -22,8 +22,6 @@ RSpec.describe "Whisper composer", type: :system do
     SiteSetting.discourse_whisper_enabled = true
     SiteSetting.min_post_length = 5
     SiteSetting.body_min_entropy = 1
-    SiteSetting.approve_unless_trust_level = 0
-    SiteSetting.approve_post_count = 0
   end
 
   def shot(name)
@@ -99,7 +97,7 @@ RSpec.describe "Whisper composer", type: :system do
       find(".save-or-cancel .create").click
 
       expect(page).to have_css(
-        "article.topic-post.whisper-to-user .whisper-target-banner",
+        ".cooked.whisper-to-user .whisper-target-banner",
         wait: 15,
       )
       shot("05_whisper_posted_author_view")

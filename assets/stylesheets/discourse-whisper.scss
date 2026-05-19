@@ -88,7 +88,9 @@
   }
 }
 
-article.topic-post.whisper-to-user .cooked {
+// The decorator marks the cooked element itself — a marker on the post
+// <article> does not survive Glimmer post-stream reconciliation.
+.cooked.whisper-to-user {
   background: rgb(99, 102, 241, 0.04);
   border-left: 3px solid rgb(99, 102, 241, 0.5);
   padding-left: 12px;

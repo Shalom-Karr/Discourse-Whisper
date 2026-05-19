@@ -56,29 +56,7 @@ export default {
       api.decorateCookedElement(
         (cookedEl, helper) => {
           const post = helper?.getModel?.();
-          // eslint-disable-next-line no-console
-          console.log("[whisper-debug] decorate", {
-            hasHelper: !!helper,
-            hasPost: !!post,
-            isWhisper: post?.is_whisper_to_user,
-            targetsLen: Array.isArray(post?.whisper_targets)
-              ? post.whisper_targets.length
-              : "n/a",
-          });
           if (!post?.is_whisper_to_user) {
-            return;
-          }
-
-          const article = cookedEl.closest("article.topic-post");
-          if (article) {
-            article.classList.add("whisper-to-user");
-          }
-
-          const parent = cookedEl.parentElement;
-          if (
-            !parent ||
-            parent.querySelector(":scope > .whisper-target-banner")
-          ) {
             return;
           }
 
@@ -86,6 +64,18 @@ export default {
             ? post.whisper_targets
             : [];
           if (!targets.length) {
+            return;
+          }
+
+          // Mark the cooked element itself (SCSS borders it via :has).
+          cookedEl.classList.add("whisper-to-user");
+
+          // Insert the banner as the first child of the cooked element —
+          // NOT as a sibling. The Glimmer post stream owns the elements
+          // around `.cooked`; a foreign sibling there gets reconciled
+          // away. A child of `.cooked` is re-decorated whenever the
+          // cooked HTML re-renders, so it survives.
+          if (cookedEl.querySelector(":scope > .whisper-target-banner")) {
             return;
           }
 
@@ -127,7 +117,7 @@ export default {
             banner.appendChild(link);
           });
 
-          parent.insertBefore(banner, cookedEl);
+          cookedEl.insertBefore(banner, cookedEl.firstChild);
         },
         { id: "discourse-whisper-decorator", onlyStream: true }
       );

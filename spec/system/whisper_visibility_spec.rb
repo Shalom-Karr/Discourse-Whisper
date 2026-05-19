@@ -64,7 +64,7 @@ RSpec.describe "Whisper visibility", type: :system do
       visit_topic
 
       expect(page).to have_css(
-        "article.topic-post.whisper-to-user .whisper-target-banner",
+        ".cooked.whisper-to-user .whisper-target-banner",
         wait: 10,
       )
       expect(page).to have_css(".cooked", text: whisper_body)
@@ -88,7 +88,7 @@ RSpec.describe "Whisper visibility", type: :system do
       visit_topic
 
       expect(page).to have_css(
-        "article.topic-post.whisper-to-user .whisper-target-banner",
+        ".cooked.whisper-to-user .whisper-target-banner",
         wait: 10,
       )
       shot("11_admin_oversight_view")
@@ -100,7 +100,7 @@ RSpec.describe "Whisper visibility", type: :system do
       visit_topic
 
       expect(page).to have_css(
-        "article.topic-post.whisper-to-user .whisper-target-banner",
+        ".cooked.whisper-to-user .whisper-target-banner",
         wait: 10,
       )
       shot("12_moderator_oversight_view")
@@ -186,7 +186,7 @@ RSpec.describe "Whisper visibility", type: :system do
       visit_topic
 
       expect(page).to have_css(
-        "article.topic-post.whisper-to-user .whisper-target-banner",
+        ".cooked.whisper-to-user .whisper-target-banner",
         wait: 10,
       )
       shot("17_category_moderator_oversight")
